@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// TODO(empijei): improve termination tests and harnesses.
+
 func TestTermination11(t *testing.T) {
 	t.Parallel()
 	const (
@@ -173,6 +175,29 @@ func TestValues(t *testing.T) {
 	}
 }
 
+type intPair = struct {
+	K, V int
+}
+
+func TestEntries(t *testing.T) {
+	t.Parallel()
+	var tests = []struct {
+		src  iter.Seq2[int, int]
+		want []intPair
+	}{
+		{
+			slices.All([]int{2, 3, 4, 5}),
+			[]intPair{{0, 2}, {1, 3}, {2, 4}, {3, 5}},
+		},
+	}
+	for _, tt := range tests {
+		got := slices.Collect(ops.Entries(tt.src))
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("Entries(slices.All(%v)): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
+		}
+	}
+}
+
 func TestMap(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -219,6 +244,167 @@ func TestFilter(t *testing.T) {
 }
 
 func TestPairWise(t *testing.T) {
-	// TODO
+	t.Parallel()
+	tests := []struct {
+		src  []int
+		want [][]int
+	}{
+		{
+			[]int{1, 2, 3, 4},
+			[][]int{{1, 2}, {2, 3}, {3, 4}},
+		},
+		{
+			[]int{1},
+			nil,
+		},
+		{nil, nil},
+	}
 
+	for _, tt := range tests {
+		srci := slices.Values(tt.src)
+		var got [][]int
+		for a, b := range ops.PairWise(srci) {
+			got = append(got, []int{a, b})
+		}
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("Pairwise(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
+		}
+	}
+}
+
+func TestZip(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		srca, srcb []int
+		want       [][]int
+	}{
+		{
+			[]int{1, 3, 5, 7},
+			[]int{2, 4, 6, 8},
+			[][]int{{1, 2}, {3, 4}, {5, 6}, {7, 8}},
+		},
+		{
+			[]int{1, 3, 5, 7},
+			[]int{2},
+			[][]int{{1, 2}},
+		},
+		{
+			[]int{1},
+			[]int{2, 4, 6, 8},
+			[][]int{{1, 2}},
+		},
+		{
+			nil,
+			[]int{2, 4, 6, 8},
+			nil,
+		},
+	}
+
+	for _, tt := range tests {
+		srcai := slices.Values(tt.srca)
+		srcbi := slices.Values(tt.srcb)
+		var got [][]int
+		for a, b := range ops.Zip(srcai, srcbi) {
+			got = append(got, []int{a, b})
+		}
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("Zip(%v,%v): got %v want %v diff:\n%v", tt.srca, tt.srcb, got, tt.want, diff)
+		}
+	}
+}
+
+func TestFlatten(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		src  [][]int
+		want []int
+	}{
+		{
+			[][]int{{1, 2, 3}, {4, 5, 6}},
+			[]int{1, 2, 3, 4, 5, 6},
+		},
+	}
+	for _, tt := range tests {
+		var in []iter.Seq[int]
+		for _, i := range tt.src {
+			in = append(in, slices.Values(i))
+		}
+		got := slices.Collect(ops.Flatten(slices.Values(in)))
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("Flatten(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
+		}
+	}
+}
+
+func TestFlattenSlice(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		src  [][]int
+		want []int
+	}{
+		{
+			[][]int{{1, 2, 3}, {4, 5, 6}},
+			[]int{1, 2, 3, 4, 5, 6},
+		},
+	}
+	for _, tt := range tests {
+		got := slices.Collect(ops.FlattenSlice(slices.Values(tt.src)))
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("FlattenSlice(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
+		}
+	}
+}
+
+func TestFlatten2(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		src  [][]int
+		want [][2]int
+	}{
+		{
+			[][]int{{1, 2}, {3, 4}},
+			[][2]int{{0, 1}, {0, 2}, {1, 3}, {1, 4}},
+		},
+	}
+	for _, tt := range tests {
+
+		it := ops.Flatten2(func(yield func(int, iter.Seq[int]) bool) {
+			for k, v := range tt.src {
+				if !yield(k, slices.Values(v)) {
+					return
+				}
+			}
+		})
+		var got [][2]int
+		it(func(k, v int) bool {
+			got = append(got, [2]int{k, v})
+			return true
+		})
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("Flatten2(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
+		}
+	}
+}
+
+func TestConcat(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		src  [][]int
+		want []int
+	}{
+		{
+			[][]int{{1, 2, 3}, {4, 5, 6}},
+			[]int{1, 2, 3, 4, 5, 6},
+		},
+	}
+	for _, tt := range tests {
+		var in []iter.Seq[int]
+		for _, i := range tt.src {
+			in = append(in, slices.Values(i))
+		}
+		got := slices.Collect(ops.Concat(in...))
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("Concat(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
+		}
+	}
 }

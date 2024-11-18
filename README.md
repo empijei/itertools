@@ -22,3 +22,46 @@ mapreduce-like code and that pushes for a higher mental overhead than it's neces
 This library is intended to help when those operations are actually needed to make code easier to read, but
 I would invite the reader of this document to try and avoid creating obscure code bases
 that rely too heavily on this library.
+
+# Planned work
+
+## Operators (Package `ops`)
+
+Logic:
+
+- [ ] Contains
+- [ ] First
+- [ ] Min
+- [ ] Max
+- [ ] Len
+
+Cropping:
+
+- [ ] SkipN
+- [ ] SkipUntil
+- [x] TakeN
+- [ ] TakeUntil
+
+Uniq:
+
+- [ ] Deduplicate
+
+Debug:
+
+- [ ] Tap
+
+## Extra operators (Package `xops`)
+
+Uniq:
+
+- [ ] Unique
+- [ ] Debounce
+
+## Constructors (Package `from`)
+
+- [ ] from.ScannerBytes
+- [ ] from.Chan
+
+## Harnesses (Package `itertest`)
+
+- [ ] test utils to check for iterators termination
