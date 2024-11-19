@@ -1,13 +1,20 @@
 // Package ops provides operators for iterators.
 //
-// All operators are guaranteed to run in linear time, allocate constant memory,
-// depend only on the iter package and to not spawn additional goroutines.
+// All operators are guaranteed to:
+//   - run in linear time
+//   - allocate constant memory
+//   - depend only on the iter and constraints packages
+//   - not spawn additional goroutines
 //
 // Operators that cannot be implemented within these constraint will be added to
-// a separate package.
+// a separate packages.
 package ops
 
 import "iter"
+
+/***********
+* Cropping *
+************/
 
 // Take emits the first n items of the source iterator.
 func TakeN[T any](src iter.Seq[T], n int) iter.Seq[T] {
@@ -25,6 +32,10 @@ func TakeN[T any](src iter.Seq[T], n int) iter.Seq[T] {
 		}
 	}
 }
+
+/***********************
+* Plucking and packing *
+************************/
 
 // Keys emits the keys, or first items of every couple emitted by the source iterator.
 func Keys[K, V any](src iter.Seq2[K, V]) iter.Seq[K] {
@@ -67,6 +78,10 @@ func Entries[K, V any](src iter.Seq2[K, V]) iter.Seq[struct {
 		}
 	}
 }
+
+/***************
+* Transforming *
+****************/
 
 // Map applies the predicate to the source iterator until either source is exhausted
 // or the consumer stops the iteration.
@@ -144,6 +159,51 @@ func Zip[T, V any](src1 iter.Seq[T], src2 iter.Seq[V]) iter.Seq2[T, V] {
 		}
 	}
 }
+
+// Tap calls peek for all values emitted by src and consumed by the returned Seq.
+//
+// Peek must not modify or keep a reference to the values it observes.
+func Tap[T any](src iter.Seq[T], peek func(T)) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for t := range src {
+			peek(t)
+			if !yield(t) {
+				return
+			}
+		}
+	}
+}
+
+// Deduplicate removes duplicates emitted by src. It doesn't check that
+// the entire iterator never emits two identical values, it just removes consecutive
+// identical values.
+func Deduplicate[T comparable](src iter.Seq[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		next, stop := iter.Pull(src)
+		defer stop()
+		prev, ok := next()
+		if !ok || !yield(prev) {
+			return
+		}
+		for {
+			t, ok := next()
+			if !ok {
+				return
+			}
+			if t == prev {
+				continue
+			}
+			prev = t
+			if !yield(t) {
+				return
+			}
+		}
+	}
+}
+
+/***************
+* Higher order *
+****************/
 
 // Flatten emits all values emitted by the inner iterators, flattening the source iterator
 // structure to be one layer.

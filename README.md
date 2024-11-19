@@ -27,28 +27,22 @@ that rely too heavily on this library.
 
 ## Operators (Package `ops`)
 
-Logic:
+Transforming:
 
-- [ ] Contains
-- [ ] First
-- [ ] Min
-- [ ] Max
-- [ ] Len
+- [ ] Map2
+- [ ] Map21
+- [ ] Map12
+- [ ] Filter2
 
 Cropping:
 
 - [ ] SkipN
 - [ ] SkipUntil
-- [x] TakeN
 - [ ] TakeUntil
 
 Uniq:
 
 - [ ] Deduplicate
-
-Debug:
-
-- [ ] Tap
 
 ## Extra operators (Package `xops`)
 
@@ -56,11 +50,16 @@ Uniq:
 
 - [ ] Unique
 - [ ] Debounce
+- [ ] CombineLatest
 
 ## Constructors (Package `from`)
 
 - [ ] from.ScannerBytes
-- [ ] from.Chan
+- [ ] from.Chan(cancel)
+
+## Sinks (Package `to`)
+
+- [ ] to.Chan
 
 ## Harnesses (Package `itertest`)
 

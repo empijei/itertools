@@ -313,6 +313,57 @@ func TestZip(t *testing.T) {
 	}
 }
 
+func TestTap(t *testing.T) {
+	t.Run("stops consuming", func(t *testing.T) {
+		var sum int
+		it := ops.Tap(slices.Values([]int{1, 2, 3, 4, 5}), func(i int) {
+			sum += i
+		})
+		it(func(i int) bool {
+			return i <= 3
+		})
+		if sum != 10 {
+			t.Errorf("Tap([1 2 3 4 Cancelled], sumAll): got %v want 10", sum)
+		}
+	})
+	t.Run("consumes all", func(t *testing.T) {
+		var sum int
+		it := ops.Tap(slices.Values([]int{1, 2, 3, 4, 5}), func(i int) {
+			sum += i
+		})
+		it(func(i int) bool {
+			return true
+		})
+		if sum != 15 {
+			t.Errorf("Tap([1 2 3 4 5], sumAll): got %v want 15", sum)
+		}
+	})
+}
+
+func TestDeduplicate(t *testing.T) {
+	tests := []struct {
+		src  []int
+		want []int
+	}{
+		{
+			[]int{1, 2, 3, 4, 4, 4, 5, 5, 6, 7},
+			[]int{1, 2, 3, 4, 5, 6, 7},
+		},
+		{
+			[]int{1},
+			[]int{1},
+		},
+		{},
+	}
+
+	for _, tt := range tests {
+		got := slices.Collect(ops.Deduplicate(slices.Values(tt.src)))
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("Deduplicate(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
+		}
+	}
+}
+
 func TestFlatten(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
