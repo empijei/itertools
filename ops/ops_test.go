@@ -1,8 +1,10 @@
 package ops_test
 
 import (
+	"fmt"
 	"iter"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/empijei/itertools/ops"
@@ -243,6 +245,27 @@ func TestFilter(t *testing.T) {
 	}
 }
 
+func TestMapFilterHigherArity(t *testing.T) {
+	src := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	withStrKeys := ops.Map12(slices.Values(src), func(i int) (string, int) {
+		return strconv.Itoa(i), i
+	})
+	doubled := ops.Map2(withStrKeys, func(k string, v int) (string, int) {
+		return k + "*2", v * 2
+	})
+	onlyMultiple3 := ops.Filter2(doubled, func(k string, v int) (ok bool) {
+		return v%3 == 0
+	})
+	toString := ops.Map21(onlyMultiple3, func(k string, v int) string {
+		return fmt.Sprintf("%v = %v", k, v)
+	})
+	got := slices.Collect(toString)
+	want := []string{"3*2 = 6", "6*2 = 12", "9*2 = 18"}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("1->10 | *2 | %%3 == 0 | toString: got %v want %v diff:\n%v", got, want, diff)
+	}
+}
+
 func TestPairWise(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -352,6 +375,10 @@ func TestDeduplicate(t *testing.T) {
 		{
 			[]int{1},
 			[]int{1},
+		},
+		{
+			[]int{1, 2, 3, 4, 4, 4, 5, 5, 1, 6, 7},
+			[]int{1, 2, 3, 4, 5, 1, 6, 7},
 		},
 		{},
 	}

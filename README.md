@@ -25,24 +25,18 @@ that rely too heavily on this library.
 
 # Planned work
 
+- [ ] Improve documentation with examples
+- [ ] Improve this document
+- [ ] Clearly state how to idiomatically use this package
+- [ ] Stabilize API and bump to v1
+
 ## Operators (Package `ops`)
-
-Transforming:
-
-- [ ] Map2
-- [ ] Map21
-- [ ] Map12
-- [ ] Filter2
 
 Cropping:
 
 - [ ] SkipN
 - [ ] SkipUntil
 - [ ] TakeUntil
-
-Uniq:
-
-- [ ] Deduplicate
 
 ## Extra operators (Package `xops`)
 
@@ -55,11 +49,8 @@ Uniq:
 ## Constructors (Package `from`)
 
 - [ ] from.ScannerBytes
-- [ ] from.Chan(cancel)
 
 ## Sinks (Package `to`)
-
-- [ ] to.Chan
 
 ## Harnesses (Package `itertest`)
 

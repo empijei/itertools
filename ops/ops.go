@@ -88,7 +88,40 @@ func Entries[K, V any](src iter.Seq2[K, V]) iter.Seq[struct {
 func Map[T, V any](src iter.Seq[T], predicate func(T) V) iter.Seq[V] {
 	return func(yield func(V) bool) {
 		for t := range src {
-			if t := predicate(t); !yield(t) {
+			if v := predicate(t); !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// Map2 is like [Map] for iter.Seq2.
+func Map2[K1, V1, K2, V2 any](src iter.Seq2[K1, V1], predicate func(K1, V1) (K2, V2)) iter.Seq2[K2, V2] {
+	return func(yield func(K2, V2) bool) {
+		for k1, v1 := range src {
+			if k2, v2 := predicate(k1, v1); !yield(k2, v2) {
+				return
+			}
+		}
+	}
+}
+
+// Map12 is like [Map] but it transforms the iterator from Seq to Seq2.
+func Map12[T, K, V any](src iter.Seq[T], predicate func(T) (K, V)) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for t := range src {
+			if k, v := predicate(t); !yield(k, v) {
+				return
+			}
+		}
+	}
+}
+
+// Map21 is like [Map] but it transforms the iterator from Seq2 to Seq.
+func Map21[K, V, T any](src iter.Seq2[K, V], predicate func(K, V) T) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for k, v := range src {
+			if t := predicate(k, v); !yield(t) {
 				return
 			}
 		}
@@ -103,6 +136,20 @@ func Filter[T any](src iter.Seq[T], predicate func(T) (ok bool)) iter.Seq[T] {
 				continue
 			}
 			if !yield(t) {
+				return
+			}
+		}
+	}
+}
+
+// Filter2 is like [Filter] for Seq2.
+func Filter2[K, V any](src iter.Seq2[K, V], predicate func(K, V) (ok bool)) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for k, v := range src {
+			if ok := predicate(k, v); !ok {
+				continue
+			}
+			if !yield(k, v) {
 				return
 			}
 		}
