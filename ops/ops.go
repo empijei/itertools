@@ -1,5 +1,7 @@
 // Package ops provides operators for iterators.
 //
+// # Guarantees
+//
 // All operators are guaranteed to:
 //   - run in linear time
 //   - allocate constant memory
@@ -8,6 +10,30 @@
 //
 // Operators that cannot be implemented within these constraint will be added to
 // a separate packages.
+//
+// # Idiomatic Use
+//
+// Go tends to be a very clear language that favors readability over compact code.
+// All users of this library should try their best to preserve this property when
+// manipulating iterators.
+//
+// The suggested way to do so is to name intermediate iterators when a manipulation
+// chain is implemented instead of nesting calls to `ops`.
+//
+// Example:
+//
+//	numbersTo4 := slices.Values([]int{1,2,3,4})
+//	odds := ops.Filter(numbers, func(i int) bool {
+//		return i%2 != 0
+//	})
+//	doubled := ops.Map(odds, func(i int) int {
+//		return i*2
+//	})
+//	result := slices.Collect(doubled)
+//
+// Is preferable to a chain call like:
+//
+//	result := slices.Collect(ops.Map(ops.Filter(slices.Values([]int{...
 package ops
 
 import "iter"
