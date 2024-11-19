@@ -34,6 +34,9 @@
 // Is preferable to a chain call like:
 //
 //	result := slices.Collect(ops.Map(ops.Filter(slices.Values([]int{...
+//
+// If the same combination of operators is used more than twice it's strongly advised
+// to create helper functions with telling names.
 package ops
 
 import "iter"
