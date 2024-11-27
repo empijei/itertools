@@ -1,4 +1,7 @@
-// Package ops provides operators for iterators.
+// Package itertools provides operators for iterators.
+//
+// For functions that consume or create operators please check the [from] and [to]
+// packages in this module.
 //
 // # Guarantees
 //
@@ -18,26 +21,29 @@
 // manipulating iterators.
 //
 // The suggested way to do so is to name intermediate iterators when a manipulation
-// chain is implemented instead of nesting calls to `ops`.
+// chain is implemented instead of nesting calls.
 //
 // Example:
 //
 //	numbersTo4 := slices.Values([]int{1,2,3,4})
-//	odds := ops.Filter(numbers, func(i int) bool {
+//	odds := Filter(numbers, func(i int) bool {
 //		return i%2 != 0
 //	})
-//	doubled := ops.Map(odds, func(i int) int {
+//	doubled := Map(odds, func(i int) int {
 //		return i*2
 //	})
 //	result := slices.Collect(doubled)
 //
-// Is preferable to a chain call like:
+// Is preferable to a call chain like:
 //
-//	result := slices.Collect(ops.Map(ops.Filter(slices.Values([]int{...
+//	result := slices.Collect(Map(Filter(slices.Values([]int{...
 //
 // If the same combination of operators is used more than twice it's strongly advised
 // to create helper functions with telling names.
-package ops
+//
+// [from]: https://pkg.go.dev/github.com/empijei/itertools/from
+// [to]: https://pkg.go.dev/github.com/empijei/itertools/to
+package itertools
 
 import "iter"
 
@@ -45,7 +51,8 @@ import "iter"
 * Cropping *
 ************/
 
-// Take emits the first n items of the source iterator.
+// TakeN emits the first n items of the source iterator.
+// This can be seen as a slice operation such as myIterator[:n+1].
 func TakeN[T any](src iter.Seq[T], n int) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		next, stop := iter.Pull(src)
@@ -62,6 +69,74 @@ func TakeN[T any](src iter.Seq[T], n int) iter.Seq[T] {
 	}
 }
 
+// TakeWhile mirrors the source iterator while predicate returns true, and stops at the first false.
+func TakeWhile[T any](src iter.Seq[T], predicate func(T) (ok bool)) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for t := range src {
+			if !predicate(t) {
+				return
+			}
+			if !yield(t) {
+				return
+			}
+		}
+	}
+}
+
+// SkipN discards the first n items of the source iterator and forwards the remaining items.
+// This can be seen as a slice operation such as myIterator[n:].
+func SkipN[T any](src iter.Seq[T], n int) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		next, stop := iter.Pull(src)
+		defer stop()
+		for range n {
+			_, ok := next()
+			if !ok {
+				return
+			}
+		}
+		for {
+			t, ok := next()
+			if !ok {
+				return
+			}
+			if !yield(t) {
+				return
+			}
+		}
+	}
+}
+
+// SkipUntil discards all values until predicate returns true for the first time.
+// Then it stops calling predicate and forwards the first accepted value and all the remaining ones.
+func SkipUntil[T any](src iter.Seq[T], predicate func(T) (ok bool)) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		next, stop := iter.Pull(src)
+		defer stop()
+		for {
+			v, ok := next()
+			if !ok {
+				return
+			}
+			if predicate(v) {
+				if !yield(v) {
+					return
+				}
+				break
+			}
+		}
+		for {
+			v, ok := next()
+			if !ok {
+				return
+			}
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
 /***********************
 * Plucking and packing *
 ************************/
@@ -69,7 +144,7 @@ func TakeN[T any](src iter.Seq[T], n int) iter.Seq[T] {
 // Keys emits the keys, or first items of every couple emitted by the source iterator.
 func Keys[K, V any](src iter.Seq2[K, V]) iter.Seq[K] {
 	return func(yield func(K) bool) {
-		for k, _ := range src {
+		for k := range src {
 			if !yield(k) {
 				return
 			}

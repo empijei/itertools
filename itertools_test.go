@@ -1,4 +1,4 @@
-package ops_test
+package itertools_test
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/empijei/itertools/ops"
+	. "github.com/empijei/itertools"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -25,13 +25,13 @@ func TestTermination11(t *testing.T) {
 		it   func(iter.Seq[int]) iter.Seq[int]
 	}{
 		{"TakeN", func(src iter.Seq[int]) iter.Seq[int] {
-			return ops.TakeN(src, target+margin)
+			return TakeN(src, target+margin)
 		}},
 		{"Map", func(src iter.Seq[int]) iter.Seq[int] {
-			return ops.Map(src, func(i int) int { return i })
+			return Map(src, func(i int) int { return i })
 		}},
 		{"Filter", func(src iter.Seq[int]) iter.Seq[int] {
-			return ops.Filter(src, func(i int) bool { return true })
+			return Filter(src, func(i int) bool { return true })
 		}},
 	}
 
@@ -81,7 +81,7 @@ func TestTermination12(t *testing.T) {
 	}{
 		{name: "PairWise",
 			it: func(src iter.Seq[int]) iter.Seq2[int, int] {
-				return ops.PairWise(src)
+				return PairWise(src)
 			},
 			adjr: -1,
 		},
@@ -133,11 +133,60 @@ func TestTakeN(t *testing.T) {
 		{[]int{3, 7, 11}, 0, nil},
 	}
 	for _, tt := range tests {
-		projection := ops.TakeN(slices.Values(tt.src), tt.n)
+		projection := TakeN(slices.Values(tt.src), tt.n)
 		got := slices.Collect(projection)
 		if diff := cmp.Diff(tt.want, got); diff != "" {
 			t.Errorf("TakeN(%v, %v): got %v want %v diff:\n%v", tt.src, tt.n, got, tt.want, diff)
 		}
+	}
+}
+
+func TestTakeWhile(t *testing.T) {
+	src := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+	pred := func(i int) bool { return i < 3 }
+	got := slices.Collect(TakeWhile(slices.Values(src), pred))
+	want := []int{1, 2}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("TakeWhile(1->9, <3): got %v want %v", got, want)
+	}
+}
+
+func TestSkipN(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		src  []int
+		n    int
+		want []int
+	}{
+		{[]int{}, 3, nil},
+		{nil, 0, nil},
+		{[]int{1, 2, 3, 4}, 2, []int{3, 4}},
+		{[]int{3, 7, 11}, 10, nil},
+		{[]int{3, 7, 11}, 0, []int{3, 7, 11}},
+	}
+	for _, tt := range tests {
+		projection := SkipN(slices.Values(tt.src), tt.n)
+		got := slices.Collect(projection)
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("SkipN(%v, %v): got %v want %v diff:\n%v", tt.src, tt.n, got, tt.want, diff)
+		}
+	}
+}
+
+func TestSkipUntil(t *testing.T) {
+	src := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+	var callCount int
+	pred := func(i int) bool {
+		callCount++
+		return i > 7
+	}
+	got := slices.Collect(SkipUntil(slices.Values(src), pred))
+	want := []int{8, 9}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("SkipUntil(1->9, >7): got %v want %v", got, want)
+	}
+	if wantCalls := 8; callCount != wantCalls {
+		t.Errorf("SkipUntil(1->9, >7): got %v calls to predicate, want %v", callCount, wantCalls)
 	}
 }
 
@@ -151,7 +200,7 @@ func TestKeys(t *testing.T) {
 		{nil, nil},
 	}
 	for _, tt := range tests {
-		projection := ops.Keys(slices.All(tt.src))
+		projection := Keys(slices.All(tt.src))
 		got := slices.Collect(projection)
 		if diff := cmp.Diff(tt.want, got); diff != "" {
 			t.Errorf("Keys(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
@@ -169,7 +218,7 @@ func TestValues(t *testing.T) {
 		{nil, nil},
 	}
 	for _, tt := range tests {
-		projection := ops.Values(slices.All(tt.src))
+		projection := Values(slices.All(tt.src))
 		got := slices.Collect(projection)
 		if diff := cmp.Diff(tt.want, got); diff != "" {
 			t.Errorf("Values(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
@@ -193,7 +242,7 @@ func TestEntries(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		got := slices.Collect(ops.Entries(tt.src))
+		got := slices.Collect(Entries(tt.src))
 		if diff := cmp.Diff(tt.want, got); diff != "" {
 			t.Errorf("Entries(slices.All(%v)): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
 		}
@@ -214,7 +263,7 @@ func TestMap(t *testing.T) {
 	times2 := func(i int) int { return i * 2 }
 
 	for _, tt := range tests {
-		projection := ops.Map(slices.Values(tt.src), times2)
+		projection := Map(slices.Values(tt.src), times2)
 		got := slices.Collect(projection)
 		if diff := cmp.Diff(tt.want, got); diff != "" {
 			t.Errorf("Map(%v, times2): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
@@ -237,7 +286,7 @@ func TestFilter(t *testing.T) {
 	isEven := func(i int) bool { return i%2 == 0 }
 
 	for _, tt := range tests {
-		projection := ops.Filter(slices.Values(tt.src), isEven)
+		projection := Filter(slices.Values(tt.src), isEven)
 		got := slices.Collect(projection)
 		if diff := cmp.Diff(tt.want, got); diff != "" {
 			t.Errorf("Filter(%v, isEven): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
@@ -247,16 +296,16 @@ func TestFilter(t *testing.T) {
 
 func TestMapFilterHigherArity(t *testing.T) {
 	src := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	withStrKeys := ops.Map12(slices.Values(src), func(i int) (string, int) {
+	withStrKeys := Map12(slices.Values(src), func(i int) (string, int) {
 		return strconv.Itoa(i), i
 	})
-	doubled := ops.Map2(withStrKeys, func(k string, v int) (string, int) {
+	doubled := Map2(withStrKeys, func(k string, v int) (string, int) {
 		return k + "*2", v * 2
 	})
-	onlyMultiple3 := ops.Filter2(doubled, func(k string, v int) (ok bool) {
+	onlyMultiple3 := Filter2(doubled, func(k string, v int) (ok bool) {
 		return v%3 == 0
 	})
-	toString := ops.Map21(onlyMultiple3, func(k string, v int) string {
+	toString := Map21(onlyMultiple3, func(k string, v int) string {
 		return fmt.Sprintf("%v = %v", k, v)
 	})
 	got := slices.Collect(toString)
@@ -286,7 +335,7 @@ func TestPairWise(t *testing.T) {
 	for _, tt := range tests {
 		srci := slices.Values(tt.src)
 		var got [][]int
-		for a, b := range ops.PairWise(srci) {
+		for a, b := range PairWise(srci) {
 			got = append(got, []int{a, b})
 		}
 		if diff := cmp.Diff(tt.want, got); diff != "" {
@@ -327,7 +376,7 @@ func TestZip(t *testing.T) {
 		srcai := slices.Values(tt.srca)
 		srcbi := slices.Values(tt.srcb)
 		var got [][]int
-		for a, b := range ops.Zip(srcai, srcbi) {
+		for a, b := range Zip(srcai, srcbi) {
 			got = append(got, []int{a, b})
 		}
 		if diff := cmp.Diff(tt.want, got); diff != "" {
@@ -339,7 +388,7 @@ func TestZip(t *testing.T) {
 func TestTap(t *testing.T) {
 	t.Run("stops consuming", func(t *testing.T) {
 		var sum int
-		it := ops.Tap(slices.Values([]int{1, 2, 3, 4, 5}), func(i int) {
+		it := Tap(slices.Values([]int{1, 2, 3, 4, 5}), func(i int) {
 			sum += i
 		})
 		it(func(i int) bool {
@@ -351,7 +400,7 @@ func TestTap(t *testing.T) {
 	})
 	t.Run("consumes all", func(t *testing.T) {
 		var sum int
-		it := ops.Tap(slices.Values([]int{1, 2, 3, 4, 5}), func(i int) {
+		it := Tap(slices.Values([]int{1, 2, 3, 4, 5}), func(i int) {
 			sum += i
 		})
 		it(func(i int) bool {
@@ -384,7 +433,7 @@ func TestDeduplicate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := slices.Collect(ops.Deduplicate(slices.Values(tt.src)))
+		got := slices.Collect(Deduplicate(slices.Values(tt.src)))
 		if diff := cmp.Diff(tt.want, got); diff != "" {
 			t.Errorf("Deduplicate(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
 		}
@@ -407,7 +456,7 @@ func TestFlatten(t *testing.T) {
 		for _, i := range tt.src {
 			in = append(in, slices.Values(i))
 		}
-		got := slices.Collect(ops.Flatten(slices.Values(in)))
+		got := slices.Collect(Flatten(slices.Values(in)))
 		if diff := cmp.Diff(tt.want, got); diff != "" {
 			t.Errorf("Flatten(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
 		}
@@ -426,7 +475,7 @@ func TestFlattenSlice(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		got := slices.Collect(ops.FlattenSlice(slices.Values(tt.src)))
+		got := slices.Collect(FlattenSlice(slices.Values(tt.src)))
 		if diff := cmp.Diff(tt.want, got); diff != "" {
 			t.Errorf("FlattenSlice(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
 		}
@@ -446,7 +495,7 @@ func TestFlatten2(t *testing.T) {
 	}
 	for _, tt := range tests {
 
-		it := ops.Flatten2(func(yield func(int, iter.Seq[int]) bool) {
+		it := Flatten2(func(yield func(int, iter.Seq[int]) bool) {
 			for k, v := range tt.src {
 				if !yield(k, slices.Values(v)) {
 					return
@@ -480,7 +529,7 @@ func TestConcat(t *testing.T) {
 		for _, i := range tt.src {
 			in = append(in, slices.Values(i))
 		}
-		got := slices.Collect(ops.Concat(in...))
+		got := slices.Collect(Concat(in...))
 		if diff := cmp.Diff(tt.want, got); diff != "" {
 			t.Errorf("Concat(%v): got %v want %v diff:\n%v", tt.src, got, tt.want, diff)
 		}
