@@ -1,4 +1,4 @@
-# Itertools [![GoDoc](https://pkg.go.dev/badge/github.com/empijei/itertools)](https://pkg.go.dev/github.com/empijei/itertools) [![Go Report Card](https://goreportcard.com/badge/github.com/empijei/itertools)](https://goreportcard.com/report/github.com/empijei/itertools)
+# Itertools [![GoDoc](https://pkg.go.dev/badge/github.com/empijei/itertools)](https://pkg.go.dev/github.com/empijei/itertools) [![Go Report Card](https://goreportcard.com/badge/github.com/empijei/itertools)](https://goreportcard.com/report/github.com/empijei/itertools) [![Go build and tests](https://github.com/empijei/itertools/actions/workflows/go.yml/badge.svg)](https://github.com/empijei/itertools/actions/workflows/go.yml)
 
 Tools and libraries to deal with iterators in Go > 1.23.
 
