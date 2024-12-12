@@ -3,6 +3,8 @@ package from
 import (
 	"bufio"
 	"context"
+	"errors"
+	"io/fs"
 	"iter"
 )
 
@@ -37,5 +39,26 @@ func Chan[T any](ctx context.Context, src <-chan T) iter.Seq[T] {
 				}
 			}
 		}
+	}
+}
+
+// DirStep represents a step in a directory Walk.
+type DirStep struct {
+	FullPath string
+	Entry    fs.DirEntry
+}
+
+// DirWalk emits all entries for root and its subdirectories.
+// Errors are forwarded, and the consumer may decide wether to stop iteration or continue consuming further values.
+//
+// Use os.DirFS(path) to create fsys from disk.
+func DirWalk(ctx context.Context, fsys fs.FS, root string) iter.Seq2[DirStep, error] {
+	return func(yield func(DirStep, error) bool) {
+		fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
+			if !yield(DirStep{FullPath: path, Entry: d}, err) {
+				return errors.New("consumer stopped")
+			}
+			return nil
+		})
 	}
 }

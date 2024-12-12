@@ -3,9 +3,11 @@ package from_test
 import (
 	"bufio"
 	"context"
+	"io/fs"
 	"slices"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/empijei/itertools/from"
 	"github.com/google/go-cmp/cmp"
@@ -62,4 +64,29 @@ func TestChan(t *testing.T) {
 			t.Errorf("Chan(1 2 CANCELLED): got %v want %v diff:\n%v", got, want, diff)
 		}
 	})
+}
+
+func TestDirWalk(t *testing.T) {
+	fsys := fstest.MapFS(map[string]*fstest.MapFile{
+		"root/foo/bar.txt": {Data: []byte("hello bar")},
+		"root/empty":       {Mode: fs.ModeDir},
+		"root/cat.txt":     {Data: []byte("hello cat")},
+	})
+
+	var errs []error
+	var dirs []string
+	from.DirWalk(context.Background(), fsys, "root")(func(ds from.DirStep, err error) bool {
+		if err != nil {
+			errs = append(errs, err)
+		}
+		dirs = append(dirs, ds.FullPath)
+		return true
+	})
+	want := []string{"root", "root/cat.txt", "root/empty", "root/foo", "root/foo/bar.txt"}
+	if diff := cmp.Diff(want, dirs); diff != "" {
+		t.Errorf("DirWalk: got %v want %v diff:\n%s", dirs, want, diff)
+	}
+	if len(errs) != 0 {
+		t.Errorf("DirWalk errors: got %v want none", errs)
+	}
 }
