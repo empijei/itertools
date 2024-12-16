@@ -46,7 +46,7 @@ func Chan[T any](ctx context.Context, src <-chan T) iter.Seq[T] {
 type DirStep struct {
 	// FullPath represents the path anchored to the root walk directory.
 	// This mimics the behavior of "path" in fs.WalkDirFunc.
-	FullPath string
+	Path string
 	// Entry is the DirEntry that would be passed to fs.WalkDirFunc.
 	Entry fs.DirEntry
 }
@@ -58,7 +58,7 @@ type DirStep struct {
 func DirWalk(ctx context.Context, fsys fs.FS, root string) iter.Seq2[DirStep, error] {
 	return func(yield func(DirStep, error) bool) {
 		fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
-			if !yield(DirStep{FullPath: path, Entry: d}, err) {
+			if !yield(DirStep{Path: path, Entry: d}, err) {
 				return errors.New("consumer stopped")
 			}
 			return nil

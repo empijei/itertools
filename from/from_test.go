@@ -79,7 +79,7 @@ func TestDirWalk(t *testing.T) {
 		if err != nil {
 			errs = append(errs, err)
 		}
-		dirs = append(dirs, ds.FullPath)
+		dirs = append(dirs, ds.Path)
 		return true
 	})
 	want := []string{"root", "root/cat.txt", "root/empty", "root/foo", "root/foo/bar.txt"}
