@@ -44,8 +44,11 @@ func Chan[T any](ctx context.Context, src <-chan T) iter.Seq[T] {
 
 // DirStep represents a step in a directory Walk.
 type DirStep struct {
+	// FullPath represents the path anchored to the root walk directory.
+	// This mimics the behavior of "path" in fs.WalkDirFunc.
 	FullPath string
-	Entry    fs.DirEntry
+	// Entry is the DirEntry that would be passed to fs.WalkDirFunc.
+	Entry fs.DirEntry
 }
 
 // DirWalk emits all entries for root and its subdirectories.
