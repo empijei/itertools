@@ -90,3 +90,26 @@ func TestDirWalk(t *testing.T) {
 		t.Errorf("DirWalk errors: got %v want none", errs)
 	}
 }
+
+func TestDirWalkCancellation(t *testing.T) {
+	fsys := fstest.MapFS(map[string]*fstest.MapFile{
+		"root/foo/bar.txt": {Data: []byte("hello bar")},
+		"root/empty":       {Mode: fs.ModeDir},
+		"root/cat.txt":     {Data: []byte("hello cat")},
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	var errs []error
+	var dirs []string
+	from.DirWalk(ctx, fsys, "root")(func(ds from.DirStep, err error) bool {
+		if err != nil {
+			errs = append(errs, err)
+		}
+		dirs = append(dirs, ds.Path)
+		return true
+	})
+	if len(errs) == 0 {
+		t.Errorf("DirWalk interruption: got err nil, wanted err")
+	}
+}

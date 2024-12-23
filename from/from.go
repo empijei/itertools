@@ -58,6 +58,12 @@ type DirStep struct {
 func DirWalk(ctx context.Context, fsys fs.FS, root string) iter.Seq2[DirStep, error] {
 	return func(yield func(DirStep, error) bool) {
 		fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
+			select {
+			case <-ctx.Done():
+				yield(DirStep{}, ctx.Err())
+				return ctx.Err()
+			default:
+			}
 			if !yield(DirStep{Path: path, Entry: d}, err) {
 				return errors.New("consumer stopped")
 			}
