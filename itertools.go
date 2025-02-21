@@ -47,6 +47,8 @@ package itertools
 
 import "iter"
 
+type empty = struct{}
+
 /***********
 * Cropping *
 ************/
@@ -258,6 +260,13 @@ func Filter2[K, V any](src iter.Seq2[K, V], predicate func(K, V) (ok bool)) iter
 			}
 		}
 	}
+}
+
+// EmptyValues promotes the iterator to a Seq2 with empty values. This can be used
+// as a helper to populate a map used as a set or any other iter consumer that doesn't
+// use the values but still requires a Seq2.
+func EmptyValues[T any](src iter.Seq[T]) iter.Seq2[T, empty] {
+	return Map12(src, func(t T) (T, empty) { return t, empty{} })
 }
 
 // PairWise emits all values with the value that preceded them.

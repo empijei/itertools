@@ -31,12 +31,13 @@ func TestTermination11(t *testing.T) {
 			return Map(src, func(i int) int { return i })
 		}},
 		{"Filter", func(src iter.Seq[int]) iter.Seq[int] {
-			return Filter(src, func(i int) bool { return true })
+			return Filter(src, func(_ int) bool { return true })
 		}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
 			reads := 0
 			tapSource := func(yield func(int) bool) {
@@ -63,7 +64,6 @@ func TestTermination11(t *testing.T) {
 				t.Errorf("%v writes: got %v want %v", tt.name, writes, target)
 			}
 		})
-
 	}
 }
 
@@ -89,6 +89,7 @@ func TestTermination12(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
 			reads := 0
 			tapSource := func(yield func(int) bool) {
@@ -115,7 +116,6 @@ func TestTermination12(t *testing.T) {
 				t.Errorf("%v writes: got %v want %v", tt.name, got, target)
 			}
 		})
-
 	}
 }
 
@@ -142,6 +142,7 @@ func TestTakeN(t *testing.T) {
 }
 
 func TestTakeWhile(t *testing.T) {
+	t.Parallel()
 	src := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 	pred := func(i int) bool { return i < 3 }
 	got := slices.Collect(TakeWhile(slices.Values(src), pred))
@@ -174,6 +175,7 @@ func TestSkipN(t *testing.T) {
 }
 
 func TestSkipUntil(t *testing.T) {
+	t.Parallel()
 	src := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 	var callCount int
 	pred := func(i int) bool {
@@ -295,6 +297,7 @@ func TestFilter(t *testing.T) {
 }
 
 func TestMapFilterHigherArity(t *testing.T) {
+	t.Parallel()
 	src := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	withStrKeys := Map12(slices.Values(src), func(i int) (string, int) {
 		return strconv.Itoa(i), i
@@ -302,7 +305,7 @@ func TestMapFilterHigherArity(t *testing.T) {
 	doubled := Map2(withStrKeys, func(k string, v int) (string, int) {
 		return k + "*2", v * 2
 	})
-	onlyMultiple3 := Filter2(doubled, func(k string, v int) (ok bool) {
+	onlyMultiple3 := Filter2(doubled, func(_ string, v int) (ok bool) {
 		return v%3 == 0
 	})
 	toString := Map21(onlyMultiple3, func(k string, v int) string {
@@ -386,7 +389,9 @@ func TestZip(t *testing.T) {
 }
 
 func TestTap(t *testing.T) {
+	t.Parallel()
 	t.Run("stops consuming", func(t *testing.T) {
+		t.Parallel()
 		var sum int
 		it := Tap(slices.Values([]int{1, 2, 3, 4, 5}), func(i int) {
 			sum += i
@@ -399,11 +404,12 @@ func TestTap(t *testing.T) {
 		}
 	})
 	t.Run("consumes all", func(t *testing.T) {
+		t.Parallel()
 		var sum int
 		it := Tap(slices.Values([]int{1, 2, 3, 4, 5}), func(i int) {
 			sum += i
 		})
-		it(func(i int) bool {
+		it(func(_ int) bool {
 			return true
 		})
 		if sum != 15 {
@@ -413,6 +419,7 @@ func TestTap(t *testing.T) {
 }
 
 func TestDeduplicate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		src  []int
 		want []int
@@ -494,7 +501,6 @@ func TestFlatten2(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-
 		it := Flatten2(func(yield func(int, iter.Seq[int]) bool) {
 			for k, v := range tt.src {
 				if !yield(k, slices.Values(v)) {
