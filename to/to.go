@@ -4,9 +4,13 @@ package to
 import (
 	"context"
 	"iter"
+	"maps"
 
+	"github.com/empijei/itertools"
 	"golang.org/x/exp/constraints"
 )
+
+type empty = struct{}
 
 func zero[T any]() (zero T) { return }
 
@@ -119,4 +123,9 @@ func Chan[T any](ctx context.Context, src iter.Seq[T], buf int) <-chan T {
 		}
 	}()
 	return c
+}
+
+// Set returns a map that has src values as keys.
+func Set[T comparable](src iter.Seq[T]) map[T]empty {
+	return maps.Collect(itertools.EmptyValues(src))
 }
